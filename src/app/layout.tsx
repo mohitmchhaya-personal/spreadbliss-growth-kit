@@ -1,19 +1,26 @@
 import type { Metadata } from "next";
-import { DM_Sans, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
+const dmSans = localFont({
+  src: [
+    { path: "./fonts/dm-sans-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/dm-sans-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/dm-sans-latin.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/dm-sans-latin.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-dm-sans",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: [
+    { path: "./fonts/inter-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/inter-latin.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/inter-latin.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-inter",
   display: "swap",
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
