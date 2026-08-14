@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 type FieldLabelProps = {
-  htmlFor: string;
+  htmlFor?: string;
   children: ReactNode;
   required?: boolean;
 };
@@ -9,7 +9,7 @@ type FieldLabelProps = {
 export function FieldLabel({ htmlFor, children, required }: FieldLabelProps) {
   return (
     <label
-      htmlFor={htmlFor}
+      {...(htmlFor ? { htmlFor } : {})}
       className="mb-2 flex items-center gap-2 text-[13.5px] font-semibold text-ink"
     >
       {children}

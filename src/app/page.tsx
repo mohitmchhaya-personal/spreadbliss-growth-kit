@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { DisabledButton } from "@/components/DisabledButton";
 import { FieldLabel } from "@/components/FieldLabel";
 import { Icon, type IconComponent } from "@/components/icons";
@@ -32,9 +33,14 @@ const impactCardItems = [
 
 function Wordmark() {
   return (
-    <span className="font-display text-[24px] font-bold tracking-[-0.04em] text-ink">
-      Spreadbliss
-    </span>
+    <Image
+      src="/spreadbliss-logo.png"
+      alt="SpreadBliss"
+      width={1500}
+      height={452}
+      unoptimized
+      className="h-16 w-auto shrink-0 select-none mix-blend-multiply"
+    />
   );
 }
 
@@ -120,14 +126,8 @@ export default function Home() {
             </div>
 
             <div className="lg:col-span-2">
-              <FieldLabel htmlFor="organization-logo">Organization logo</FieldLabel>
-              <button
-                id="organization-logo"
-                type="button"
-                disabled
-                className="flex w-full cursor-not-allowed flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-canvas/50 px-6 py-9 text-center transition"
-                aria-label="Organization logo upload unavailable until organization information is entered"
-              >
+              <FieldLabel>Organization logo</FieldLabel>
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-canvas/50 px-6 py-9 text-center transition hover:border-brand/50 hover:bg-brand-soft/30">
                 <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-brand shadow-sm">
                   <Icon.Upload className="h-5 w-5" />
                 </span>
@@ -136,7 +136,7 @@ export default function Home() {
                   <span className="text-brand-strong underline underline-offset-2">browse files</span>
                 </p>
                 <p className="text-[12.5px] text-muted">PNG, JPG or SVG — stays on your device</p>
-              </button>
+              </div>
             </div>
 
             <div>
@@ -170,7 +170,7 @@ export default function Home() {
                 type="button"
                 disabled
                 className="group flex cursor-not-allowed items-center gap-3 rounded-xl border border-line bg-canvas/60 px-4 py-3.5 text-left opacity-80"
-                aria-label={`${label} sharing unavailable until organization information is entered`}
+                aria-disabled
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-muted shadow-sm">
                   <ShareIcon className="h-[18px] w-[18px]" />

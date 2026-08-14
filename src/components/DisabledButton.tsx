@@ -19,7 +19,7 @@ export function DisabledButton({
       : "border border-line bg-canvas/60 text-muted";
 
   return (
-    <button type="button" disabled className={`${base} ${styles} ${className}`}>
+    <button type="button" disabled aria-disabled className={`${base} ${styles} ${className}`}>
       {children}
     </button>
   );
