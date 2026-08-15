@@ -37,10 +37,15 @@ xdotool key --window <WINDOW_ID> ctrl+plus          # zoom step; ctrl+0 resets
 ```
 Verify the real viewport afterwards with `innerWidth` / `devicePixelRatio` — zoom steps are 110/125/150/175/200/250/300, so count presses.
 
+Caveat: when driving Chrome through the browser automation tool, the viewport may be CDP-emulated and pinned (e.g. `innerWidth` stays 1600 even after `xdotool windowsize` succeeds). If `innerWidth` doesn't follow the OS window size, use the tool's mobile emulation (`set_mobile`) instead — it yields a ~410px-wide mobile viewport (exact 390 not settable). Always assert `innerWidth` before trusting any responsive measurement, and re-run the overflow one-liner in that state.
+
+## Browser typing gotcha
+The automation `type` action appends to existing input. To replace a field's value: click the field, press `Control+A`, press `Delete`, then type. Multi-key strings like "BackSpace BackSpace" don't work — send individual key presses.
+
 ## Expectations for the shell phase
 - Exactly five numbered sections: Organization Information, Share Your Profile, QR Code, Website Badge, Impact Card.
 - All 16 actions (12 share targets + Download QR Code, Copy Profile Link, Copy Website Code, Download Impact Card) are intentionally `disabled` — "does nothing" is correct; failing behavior would be a throw, a fake success toast, or a focusable disabled button.
-- Only the 4 text inputs are in the tab order. The logo dropzone's "browse files" is a plain `<span>` (no `<input type=file>` yet), so it is not keyboard reachable — expected until the upload phase.
+- Only the 4 text inputs are in the tab order. The logo dropzone's "browse files" is a plain `<span>` (no `<input type=file>` yet), so it is not keyboard reachable — expected until the upload phase. (From the form-state phase onward there IS a hidden `#organization-logo` file input — use the automation tool's `select_file` on it; a `chmod 000` file safely triggers the FileReader read-failure path.)
 - Ignore `[HMR] connected` and the React DevTools notice in the dev console; they are not app errors.
 
 ## Devin Secrets Needed
