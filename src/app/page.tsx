@@ -3,27 +3,14 @@
 import Image from "next/image";
 import { useState } from "react";
 import { DisabledButton } from "@/components/DisabledButton";
-import { Icon, type IconComponent } from "@/components/icons";
+import { Icon } from "@/components/icons";
 import { OrganizationForm } from "@/components/OrganizationForm";
 import { SectionCard } from "@/components/SectionCard";
+import { SharePanel } from "@/components/SharePanel";
 import { deriveGeneratedContent } from "@/lib/strings";
+import type { ShareContent } from "@/lib/share";
 import { validateProfileUrl } from "@/lib/validators";
 import type { OrganizationInput } from "@/types/growth-kit";
-
-const shareTargets: { label: string; icon: IconComponent }[] = [
-  { label: "Copy Link", icon: Icon.Link },
-  { label: "LinkedIn", icon: Icon.LinkedIn },
-  { label: "Facebook", icon: Icon.Facebook },
-  { label: "Instagram", icon: Icon.Instagram },
-  { label: "Threads", icon: Icon.Threads },
-  { label: "Pinterest", icon: Icon.Pinterest },
-  { label: "TikTok", icon: Icon.TikTok },
-  { label: "Bluesky", icon: Icon.Bluesky },
-  { label: "X", icon: Icon.X },
-  { label: "YouTube", icon: Icon.YouTube },
-  { label: "WhatsApp", icon: Icon.WhatsApp },
-  { label: "Email", icon: Icon.Email },
-];
 
 function Wordmark() {
   return (
@@ -49,6 +36,11 @@ export default function Home() {
 
   const trimmedMessage = org.message?.trim() || undefined;
   const trimmedImpact = org.impact?.trim() || undefined;
+
+  const shareContent: ShareContent | null =
+    ready && profileUrl
+      ? { organizationName: trimmedName, profileUrl, message: trimmedMessage }
+      : null;
 
   const impactCardItems: { label: string; value: string; present: boolean }[] = [
     { label: "Organization name", value: ready ? trimmedName : "Required", present: ready },
@@ -166,22 +158,7 @@ export default function Home() {
               : "Enter your organization name and Spreadbliss profile URL to activate your sharing options."
           }
         >
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {shareTargets.map(({ label, icon: ShareIcon }) => (
-              <button
-                key={label}
-                type="button"
-                disabled
-                className="group flex cursor-not-allowed items-center gap-3 rounded-xl border border-line bg-canvas/60 px-4 py-3.5 text-left opacity-80"
-                aria-disabled
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-muted shadow-sm">
-                  <ShareIcon className="h-[18px] w-[18px]" />
-                </span>
-                <span className="text-[14px] font-semibold text-muted">{label}</span>
-              </button>
-            ))}
-          </div>
+          <SharePanel content={shareContent} />
 
           {generated ? (
             <div className="mt-6 rounded-2xl border border-line bg-canvas/50 p-5">
@@ -202,7 +179,7 @@ export default function Home() {
           <p className="mt-5 flex items-center gap-2 text-[13px] text-muted">
             <Icon.Lock className="h-4 w-4 text-brand" />
             {ready
-              ? "Sharing buttons arrive in an upcoming update — your prepared message above already stays in sync."
+              ? "Some platforms don't support prefilled posts — for those, your message is copied so you can paste it after the platform opens."
               : "Sharing buttons unlock automatically — no social accounts or passwords needed."}
           </p>
         </SectionCard>
