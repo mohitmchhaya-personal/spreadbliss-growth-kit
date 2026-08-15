@@ -8,7 +8,7 @@ import { OrganizationForm } from "@/components/OrganizationForm";
 import { SectionCard } from "@/components/SectionCard";
 import { SharePanel } from "@/components/SharePanel";
 import { deriveGeneratedContent } from "@/lib/strings";
-import type { ShareContent } from "@/lib/share";
+import { buildShareText, type ShareContent } from "@/lib/share";
 import { validateProfileUrl } from "@/lib/validators";
 import type { OrganizationInput } from "@/types/growth-kit";
 
@@ -160,7 +160,7 @@ export default function Home() {
         >
           <SharePanel content={shareContent} />
 
-          {generated ? (
+          {shareContent ? (
             <div className="mt-6 rounded-2xl border border-line bg-canvas/50 p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[12px] font-bold uppercase tracking-wide text-muted">
@@ -171,7 +171,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="mt-3 break-words text-[15px] leading-relaxed text-ink">
-                {generated.shareMessage}
+                {buildShareText(shareContent)}
               </p>
             </div>
           ) : null}
