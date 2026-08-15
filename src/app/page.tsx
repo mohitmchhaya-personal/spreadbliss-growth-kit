@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { DisabledButton } from "@/components/DisabledButton";
 import { Icon } from "@/components/icons";
+import { ImpactCardSection } from "@/components/ImpactCardSection";
 import { OrganizationForm } from "@/components/OrganizationForm";
 import { QrCodeSection } from "@/components/QrCodeSection";
 import { SectionCard } from "@/components/SectionCard";
 import { SharePanel } from "@/components/SharePanel";
 import { WebsiteBadgeSection } from "@/components/WebsiteBadgeSection";
+import { useQrCode } from "@/hooks/useQrCode";
 import { deriveGeneratedContent } from "@/lib/strings";
 import { buildShareText, type ShareContent } from "@/lib/share";
 import { validateProfileUrl } from "@/lib/validators";
@@ -44,30 +45,7 @@ export default function Home() {
       ? { organizationName: trimmedName, profileUrl, message: trimmedMessage }
       : null;
 
-  const impactCardItems: { label: string; value: string; present: boolean }[] = [
-    { label: "Organization name", value: ready ? trimmedName : "Required", present: ready },
-    {
-      label: "Organization logo (optional)",
-      value: org.logoDataUrl ? "Uploaded ✓" : "Not added yet",
-      present: Boolean(org.logoDataUrl),
-    },
-    {
-      label: "Impact statistic (optional)",
-      value: trimmedImpact ?? "Not added yet",
-      present: Boolean(trimmedImpact),
-    },
-    {
-      label: "Short message (optional)",
-      value: trimmedMessage ?? "Not added yet",
-      present: Boolean(trimmedMessage),
-    },
-    {
-      label: "Your profile QR code",
-      value: ready ? "Ready in an upcoming update" : "Requires your profile URL",
-      present: ready,
-    },
-    { label: "Spreadbliss branding", value: "Included ✓", present: true },
-  ];
+  const qr = useQrCode(ready ? profileUrl : null);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -142,7 +120,7 @@ export default function Home() {
           right={
             ready ? (
               <span className="hidden shrink-0 items-center gap-2 rounded-full border border-brand/25 bg-brand-soft/60 px-3 py-1.5 text-[12px] font-semibold text-brand-strong lg:inline-flex">
-                <Icon.Sparkle className="h-3.5 w-3.5" />
+                <Icon.Bolt className="h-3.5 w-3.5" />
                 Live — auto-updates below
               </span>
             ) : undefined
@@ -191,13 +169,18 @@ export default function Home() {
             <QrCodeSection
               organizationName={trimmedName}
               profileUrl={ready ? profileUrl : null}
+              qr={qr}
             />
           </SectionCard>
 
           <SectionCard
             step={4}
             title="Website Badge"
-            helper="Add a badge to your own website so visitors can find you on Spreadbliss."
+            helper={
+              ready
+                ? "Add this badge to your organization’s website to help visitors discover your work on Spreadbliss."
+                : "Add a badge to your own website so visitors can find you on Spreadbliss."
+            }
           >
             <WebsiteBadgeSection
               profileUrl={ready ? profileUrl : null}
@@ -209,126 +192,21 @@ export default function Home() {
         <SectionCard
           step={5}
           title="Impact Card"
-          helper="A ready-to-post square graphic that tells your story at a glance."
+          helper={
+            ready
+              ? "A ready-to-post 1080 × 1080 square graphic that celebrates your organization."
+              : "A ready-to-post square graphic that tells your story at a glance."
+          }
         >
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-center">
-            <div className="mx-auto w-full max-w-[360px]">
-              {ready ? (
-                <div className="relative flex aspect-square flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand-strong text-white shadow-[0_24px_60px_-30px_rgba(37,99,235,0.7)]">
-                  <div
-                    className="pointer-events-none absolute inset-0 opacity-25"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at center, rgba(255,255,255,0.5) 1px, transparent 1.4px)",
-                      backgroundSize: "22px 22px",
-                    }}
-                  />
-                  <div className="relative flex flex-1 flex-col p-7">
-                    <div className="flex items-center gap-3">
-                      {org.logoDataUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={org.logoDataUrl}
-                          alt={`${trimmedName} logo`}
-                          className="h-11 w-11 shrink-0 rounded-xl bg-white/90 object-contain"
-                        />
-                      ) : (
-                        <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/15 backdrop-blur">
-                          <Icon.Sparkle className="h-6 w-6 text-white" />
-                        </span>
-                      )}
-                      <span className="break-words font-display text-[17px] font-bold leading-tight">
-                        {trimmedName}
-                      </span>
-                    </div>
-
-                    <div className="mt-auto">
-                      {trimmedImpact ? (
-                        <p className="break-words font-display text-[28px] font-bold leading-tight tracking-tight">
-                          {trimmedImpact}
-                        </p>
-                      ) : null}
-                      {trimmedMessage ? (
-                        <p className="mt-3 max-w-[16rem] break-words text-[15px] leading-snug text-white/85">
-                          {trimmedMessage}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-6 flex items-end justify-between gap-3 border-t border-white/15 pt-4">
-                      <div>
-                        <p className="text-[12px] font-semibold text-white/70">Discover our work on</p>
-                        <p className="font-display text-[16px] font-bold">Spreadbliss</p>
-                      </div>
-                      <div className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-lg bg-white p-1.5 shadow-sm">
-                        <div
-                          className="h-full w-full rounded-sm opacity-30"
-                          style={{
-                            backgroundImage:
-                              "linear-gradient(#111111 25%, transparent 25%), linear-gradient(90deg, #111111 25%, transparent 25%)",
-                            backgroundSize: "8px 8px",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="relative grid aspect-square place-items-center overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-brand-soft/70 to-gold-soft/60">
-                  <div
-                    className="pointer-events-none absolute inset-0 opacity-40"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at center, rgba(37,99,235,0.22) 1px, transparent 1.4px)",
-                      backgroundSize: "20px 20px",
-                    }}
-                  />
-                  <div className="relative flex flex-col items-center gap-3 px-8 text-center">
-                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 text-brand">
-                      <Icon.Sparkle className="h-6 w-6" />
-                    </span>
-                    <p className="max-w-[220px] text-[14px] font-semibold leading-relaxed text-brand-strong">
-                      Add your organization information to create a shareable Impact Card.
-                    </p>
-                  </div>
-                </div>
-              )}
-              {ready ? (
-                <p className="mt-3 text-center text-[12px] text-muted">Exports as 1080 × 1080 PNG</p>
-              ) : null}
-            </div>
-
-            <div>
-              <h3 className="font-display text-[16px] font-bold text-ink">
-                {ready ? "This Impact Card includes" : "Your Impact Card will include"}
-              </h3>
-              <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {impactCardItems.map(({ label, value, present }) => (
-                  <li key={label} className="flex items-start gap-2.5 text-[13.5px] text-ink">
-                    <span
-                      className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${
-                        present ? "bg-brand-soft text-brand-strong" : "bg-canvas text-muted"
-                      }`}
-                    >
-                      <Icon.Check className="h-3 w-3" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="font-semibold">{label}</span>
-                      <span className="block break-words text-[12.5px] text-muted">{value}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 rounded-xl border-l-4 border-gold bg-gold-soft/40 px-4 py-3.5 text-[13.5px] font-semibold text-ink">
-                CTA on the card: “Discover our work on Spreadbliss”
-              </div>
-              <div className="mt-6">
-                <DisabledButton>
-                  <Icon.Download className="h-4 w-4" /> Download Impact Card
-                </DisabledButton>
-              </div>
-            </div>
-          </div>
+          <ImpactCardSection
+            ready={ready}
+            organizationName={trimmedName}
+            profileUrl={ready ? profileUrl : null}
+            qrDataUrl={qr.current?.dataUrl ?? null}
+            logoDataUrl={org.logoDataUrl}
+            impact={trimmedImpact}
+            message={trimmedMessage}
+          />
         </SectionCard>
       </main>
 
@@ -340,11 +218,11 @@ export default function Home() {
             </span>
             <div>
               <h3 className="font-display text-[16px] font-bold text-ink">Private by design</h3>
-              <div className="mt-3 grid grid-cols-1 gap-3 text-[13.5px] leading-relaxed text-muted sm:grid-cols-3">
-                <p>Your information stays in your browser — nothing is sent to a server.</p>
-                <p>Logo files are processed on your device and never uploaded.</p>
-                <p>No social-media credentials or logins are ever required.</p>
-              </div>
+              <p className="mt-2 max-w-3xl text-[13.5px] leading-relaxed text-muted">
+                Your organization information and uploaded logo stay in your browser — nothing is
+                sent to a server. Spreadbliss Growth Kit never asks for social-media credentials
+                and does not connect to or post directly to your social-media accounts.
+              </p>
             </div>
           </div>
         </div>

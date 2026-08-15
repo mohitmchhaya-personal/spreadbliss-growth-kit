@@ -97,4 +97,14 @@ export const Icon = {
       <path d="m5 13 4 4L19 7" />
     </svg>
   ),
+  Bolt: (props: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13l0-8Z" />
+    </svg>
+  ),
+  Spinner: (props: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" {...props}>
+      <path d="M12 3a9 9 0 1 1-9 9" />
+    </svg>
+  ),
 };
