@@ -5,7 +5,8 @@ function escapeHtmlAttribute(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;");
 }
 
 export function buildShareMessage(name: string, profileUrl: string): string {
@@ -22,6 +23,7 @@ export function buildEmailBody(name: string, profileUrl: string): string {
 
 export function buildWebsiteBadgeHtml(profileUrl: string): string {
   return `<a href="${escapeHtmlAttribute(profileUrl)}"
+   target="_blank" rel="noopener noreferrer"
    style="display:inline-flex;align-items:center;gap:8px;
           padding:10px 18px;border-radius:999px;
           background:#2563EB;color:#fff;font-weight:600;

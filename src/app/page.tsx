@@ -5,8 +5,10 @@ import { useState } from "react";
 import { DisabledButton } from "@/components/DisabledButton";
 import { Icon } from "@/components/icons";
 import { OrganizationForm } from "@/components/OrganizationForm";
+import { QrCodeSection } from "@/components/QrCodeSection";
 import { SectionCard } from "@/components/SectionCard";
 import { SharePanel } from "@/components/SharePanel";
+import { WebsiteBadgeSection } from "@/components/WebsiteBadgeSection";
 import { deriveGeneratedContent } from "@/lib/strings";
 import { buildShareText, type ShareContent } from "@/lib/share";
 import { validateProfileUrl } from "@/lib/validators";
@@ -186,37 +188,10 @@ export default function Home() {
 
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
           <SectionCard step={3} title="QR Code" helper="Point phones straight to your Spreadbliss profile.">
-            <div className="grid place-items-center rounded-2xl border border-line bg-canvas/50 px-6 py-10">
-              <div className="grid h-40 w-40 place-items-center rounded-2xl border-2 border-dashed border-line bg-white">
-                <div
-                  className="h-24 w-24 rounded-lg opacity-30"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(#cbd2dc 25%, transparent 25%), linear-gradient(90deg, #cbd2dc 25%, transparent 25%)",
-                    backgroundSize: "12px 12px",
-                  }}
-                />
-              </div>
-              <p className="mt-5 max-w-xs break-all text-center text-[13.5px] leading-relaxed text-muted">
-                {ready && profileUrl ? (
-                  <>
-                    Your QR code will encode{" "}
-                    <span className="font-semibold text-ink">{profileUrl}</span> — generation arrives
-                    in an upcoming update.
-                  </>
-                ) : (
-                  "Your QR code will appear here once you enter your Spreadbliss profile URL."
-                )}
-              </p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <DisabledButton>
-                <Icon.Download className="h-4 w-4" /> Download QR Code
-              </DisabledButton>
-              <DisabledButton variant="outline">
-                <Icon.Link className="h-4 w-4" /> Copy Profile Link
-              </DisabledButton>
-            </div>
+            <QrCodeSection
+              organizationName={trimmedName}
+              profileUrl={ready ? profileUrl : null}
+            />
           </SectionCard>
 
           <SectionCard
@@ -224,52 +199,10 @@ export default function Home() {
             title="Website Badge"
             helper="Add a badge to your own website so visitors can find you on Spreadbliss."
           >
-            <div className="grid place-items-center rounded-2xl border border-line bg-canvas/50 px-6 py-8">
-              {ready && profileUrl ? (
-                <>
-                  <a
-                    href={profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 rounded-full bg-brand px-5 py-3 font-display text-[14px] font-bold text-white shadow-sm transition hover:bg-brand-strong"
-                  >
-                    <Icon.Sparkle className="h-4 w-4 text-gold" />
-                    Find us on Spreadbliss
-                  </a>
-                  <p className="mt-4 text-[12.5px] text-muted">Live preview</p>
-                </>
-              ) : (
-                <>
-                  <div className="inline-flex items-center gap-3 rounded-full border border-line bg-white px-5 py-3 opacity-60 shadow-sm">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-white">
-                      <Icon.Sparkle className="h-4 w-4" />
-                    </span>
-                    <span className="font-display text-[14px] font-bold text-ink">
-                      Find us on Spreadbliss
-                    </span>
-                  </div>
-                  <p className="mt-4 text-[12.5px] text-muted">Example preview</p>
-                </>
-              )}
-            </div>
-            <div className="mt-5 rounded-xl border border-line bg-[#111111] px-4 py-4 font-mono text-[12.5px] leading-relaxed">
-              {generated ? (
-                <pre className="overflow-x-auto whitespace-pre text-white/80">
-                  {generated.websiteBadgeHtml}
-                </pre>
-              ) : (
-                <>
-                  <span className="text-white/40">&lt;!-- Your embed code appears here --&gt;</span>
-                  <br />
-                  <span className="text-white/55">&lt;a href=&quot;…&quot;&gt;Find us on Spreadbliss&lt;/a&gt;</span>
-                </>
-              )}
-            </div>
-            <div className="mt-5">
-              <DisabledButton>
-                <Icon.Link className="h-4 w-4" /> Copy Website Code
-              </DisabledButton>
-            </div>
+            <WebsiteBadgeSection
+              profileUrl={ready ? profileUrl : null}
+              badgeHtml={generated?.websiteBadgeHtml ?? null}
+            />
           </SectionCard>
         </div>
 
