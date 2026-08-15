@@ -1,11 +1,14 @@
-import Image from "next/image";
-import { DisabledButton } from "@/components/DisabledButton";
-import { FieldLabel } from "@/components/FieldLabel";
-import { Icon, type IconComponent } from "@/components/icons";
-import { SectionCard } from "@/components/SectionCard";
+"use client";
 
-const inputClass =
-  "w-full rounded-xl border border-line bg-canvas/60 px-4 py-3 text-[15px] text-ink placeholder:text-muted/60 outline-none transition focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand-soft";
+import Image from "next/image";
+import { useState } from "react";
+import { DisabledButton } from "@/components/DisabledButton";
+import { Icon, type IconComponent } from "@/components/icons";
+import { OrganizationForm } from "@/components/OrganizationForm";
+import { SectionCard } from "@/components/SectionCard";
+import { deriveGeneratedContent } from "@/lib/strings";
+import { validateProfileUrl } from "@/lib/validators";
+import type { OrganizationInput } from "@/types/growth-kit";
 
 const shareTargets: { label: string; icon: IconComponent }[] = [
   { label: "Copy Link", icon: Icon.Link },
@@ -22,15 +25,6 @@ const shareTargets: { label: string; icon: IconComponent }[] = [
   { label: "Email", icon: Icon.Email },
 ];
 
-const impactCardItems = [
-  "Organization name",
-  "Organization logo (optional)",
-  "Impact statistic (optional)",
-  "Short message (optional)",
-  "Your profile QR code",
-  "Spreadbliss branding",
-];
-
 function Wordmark() {
   return (
     <Image
@@ -45,6 +39,42 @@ function Wordmark() {
 }
 
 export default function Home() {
+  const [org, setOrg] = useState<OrganizationInput>({ name: "", profileUrl: "" });
+
+  const trimmedName = org.name.trim();
+  const urlValidation = validateProfileUrl(org.profileUrl);
+  const ready = trimmedName.length > 0 && urlValidation.status === "valid";
+  const profileUrl = urlValidation.status === "valid" ? urlValidation.url : null;
+  const generated = ready ? deriveGeneratedContent(org) : null;
+
+  const trimmedMessage = org.message?.trim() || undefined;
+  const trimmedImpact = org.impact?.trim() || undefined;
+
+  const impactCardItems: { label: string; value: string; present: boolean }[] = [
+    { label: "Organization name", value: ready ? trimmedName : "Required", present: ready },
+    {
+      label: "Organization logo (optional)",
+      value: org.logoDataUrl ? "Uploaded ✓" : "Not added yet",
+      present: Boolean(org.logoDataUrl),
+    },
+    {
+      label: "Impact statistic (optional)",
+      value: trimmedImpact ?? "Not added yet",
+      present: Boolean(trimmedImpact),
+    },
+    {
+      label: "Short message (optional)",
+      value: trimmedMessage ?? "Not added yet",
+      present: Boolean(trimmedMessage),
+    },
+    {
+      label: "Your profile QR code",
+      value: ready ? "Ready in an upcoming update" : "Requires your profile URL",
+      present: ready,
+    },
+    { label: "Spreadbliss branding", value: "Included ✓", present: true },
+  ];
+
   return (
     <div className="min-h-screen bg-canvas">
       <header className="sticky top-0 z-20 border-b border-line/70 bg-canvas/80 backdrop-blur">
@@ -77,22 +107,31 @@ export default function Home() {
             Everything you need to share your organization&apos;s Spreadbliss profile.
           </p>
 
-          <div className="mx-auto mt-9 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
-            {[
-              ["Enter once", "Add your details a single time."],
-              ["Everything ready", "Links, QR, badge & card prepared."],
-              ["Share anywhere", "Choose where you want to post."],
-            ].map(([title, description], index) => (
-              <div key={title} className="rounded-2xl border border-line bg-card px-4 py-4 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-soft font-display text-[12px] font-bold text-brand-strong">
-                    {index + 1}
-                  </span>
-                  <span className="font-display text-[14.5px] font-bold text-ink">{title}</span>
-                </div>
-                <p className="mt-2 text-[13px] leading-relaxed text-muted">{description}</p>
+          <div aria-live="polite">
+            {ready ? (
+              <div className="mx-auto mt-9 inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand-soft/60 px-4 py-2 text-[13px] font-semibold text-brand-strong">
+                <Icon.Check className="h-4 w-4" />
+                Everything below is ready for {trimmedName}
               </div>
-            ))}
+            ) : (
+              <div className="mx-auto mt-9 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  ["Enter once", "Add your details a single time."],
+                  ["Everything ready", "Links, QR, badge & card prepared."],
+                  ["Share anywhere", "Choose where you want to post."],
+                ].map(([title, description], index) => (
+                  <div key={title} className="rounded-2xl border border-line bg-card px-4 py-4 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-soft font-display text-[12px] font-bold text-brand-strong">
+                        {index + 1}
+                      </span>
+                      <span className="font-display text-[14.5px] font-bold text-ink">{title}</span>
+                    </div>
+                    <p className="mt-2 text-[13px] leading-relaxed text-muted">{description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -101,67 +140,31 @@ export default function Home() {
         <SectionCard
           step={1}
           title="Organization Information"
-          helper="Enter your information once and your sharing tools will be prepared automatically."
+          helper={
+            ready
+              ? "Edit any field and every tool below updates instantly — no Generate button needed."
+              : "Enter your information once and your sharing tools will be prepared automatically."
+          }
+          right={
+            ready ? (
+              <span className="hidden shrink-0 items-center gap-2 rounded-full border border-brand/25 bg-brand-soft/60 px-3 py-1.5 text-[12px] font-semibold text-brand-strong lg:inline-flex">
+                <Icon.Sparkle className="h-3.5 w-3.5" />
+                Live — auto-updates below
+              </span>
+            ) : undefined
+          }
         >
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="organization-name" required>
-                Organization name
-              </FieldLabel>
-              <input
-                id="organization-name"
-                className={inputClass}
-                placeholder="e.g. Riverside Food Collective"
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="profile-url" required>
-                Spreadbliss profile URL
-              </FieldLabel>
-              <input
-                id="profile-url"
-                className={inputClass}
-                placeholder="spreadbliss.org/your-organization"
-              />
-            </div>
-
-            <div className="lg:col-span-2">
-              <FieldLabel>Organization logo</FieldLabel>
-              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-canvas/50 px-6 py-9 text-center transition hover:border-brand/50 hover:bg-brand-soft/30">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-white text-brand shadow-sm">
-                  <Icon.Upload className="h-5 w-5" />
-                </span>
-                <p className="text-[14px] font-semibold text-ink">
-                  Drag &amp; drop your logo, or{" "}
-                  <span className="text-brand-strong underline underline-offset-2">browse files</span>
-                </p>
-                <p className="text-[12.5px] text-muted">PNG, JPG or SVG — stays on your device</p>
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel htmlFor="short-message">Short message / tagline</FieldLabel>
-              <input
-                id="short-message"
-                className={inputClass}
-                placeholder="e.g. Ending hunger, one neighbor at a time."
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="impact-statement">Impact statement / statistic</FieldLabel>
-              <input
-                id="impact-statement"
-                className={inputClass}
-                placeholder="e.g. 42,000 meals served last year"
-              />
-            </div>
-          </div>
+          <OrganizationForm value={org} onChange={setOrg} />
         </SectionCard>
 
         <SectionCard
           step={2}
           title="Share Your Profile"
-          helper="Enter your organization name and Spreadbliss profile URL to activate your sharing options."
+          helper={
+            ready
+              ? "Choose where you want to share your Spreadbliss profile."
+              : "Enter your organization name and Spreadbliss profile URL to activate your sharing options."
+          }
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {shareTargets.map(({ label, icon: ShareIcon }) => (
@@ -179,9 +182,28 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {generated ? (
+            <div className="mt-6 rounded-2xl border border-line bg-canvas/50 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[12px] font-bold uppercase tracking-wide text-muted">
+                  Prepared share message
+                </p>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-strong shadow-sm">
+                  <Icon.Sparkle className="h-3 w-3 text-gold" /> Auto-generated
+                </span>
+              </div>
+              <p className="mt-3 break-words text-[15px] leading-relaxed text-ink">
+                {generated.shareMessage}
+              </p>
+            </div>
+          ) : null}
+
           <p className="mt-5 flex items-center gap-2 text-[13px] text-muted">
             <Icon.Lock className="h-4 w-4 text-brand" />
-            Sharing buttons unlock automatically — no social accounts or passwords needed.
+            {ready
+              ? "Sharing buttons arrive in an upcoming update — your prepared message above already stays in sync."
+              : "Sharing buttons unlock automatically — no social accounts or passwords needed."}
           </p>
         </SectionCard>
 
@@ -198,8 +220,16 @@ export default function Home() {
                   }}
                 />
               </div>
-              <p className="mt-5 max-w-xs text-center text-[13.5px] leading-relaxed text-muted">
-                Your QR code will appear here once you enter your Spreadbliss profile URL.
+              <p className="mt-5 max-w-xs break-all text-center text-[13.5px] leading-relaxed text-muted">
+                {ready && profileUrl ? (
+                  <>
+                    Your QR code will encode{" "}
+                    <span className="font-semibold text-ink">{profileUrl}</span> — generation arrives
+                    in an upcoming update.
+                  </>
+                ) : (
+                  "Your QR code will appear here once you enter your Spreadbliss profile URL."
+                )}
               </p>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -218,18 +248,45 @@ export default function Home() {
             helper="Add a badge to your own website so visitors can find you on Spreadbliss."
           >
             <div className="grid place-items-center rounded-2xl border border-line bg-canvas/50 px-6 py-8">
-              <div className="inline-flex items-center gap-3 rounded-full border border-line bg-white px-5 py-3 opacity-60 shadow-sm">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-white">
-                  <Icon.Sparkle className="h-4 w-4" />
-                </span>
-                <span className="font-display text-[14px] font-bold text-ink">Find us on Spreadbliss</span>
-              </div>
-              <p className="mt-4 text-[12.5px] text-muted">Example preview</p>
+              {ready && profileUrl ? (
+                <>
+                  <a
+                    href={profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 rounded-full bg-brand px-5 py-3 font-display text-[14px] font-bold text-white shadow-sm transition hover:bg-brand-strong"
+                  >
+                    <Icon.Sparkle className="h-4 w-4 text-gold" />
+                    Find us on Spreadbliss
+                  </a>
+                  <p className="mt-4 text-[12.5px] text-muted">Live preview</p>
+                </>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-3 rounded-full border border-line bg-white px-5 py-3 opacity-60 shadow-sm">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-white">
+                      <Icon.Sparkle className="h-4 w-4" />
+                    </span>
+                    <span className="font-display text-[14px] font-bold text-ink">
+                      Find us on Spreadbliss
+                    </span>
+                  </div>
+                  <p className="mt-4 text-[12.5px] text-muted">Example preview</p>
+                </>
+              )}
             </div>
             <div className="mt-5 rounded-xl border border-line bg-[#111111] px-4 py-4 font-mono text-[12.5px] leading-relaxed">
-              <span className="text-white/40">&lt;!-- Your embed code appears here --&gt;</span>
-              <br />
-              <span className="text-white/55">&lt;a href=&quot;…&quot;&gt;Find us on Spreadbliss&lt;/a&gt;</span>
+              {generated ? (
+                <pre className="overflow-x-auto whitespace-pre text-white/80">
+                  {generated.websiteBadgeHtml}
+                </pre>
+              ) : (
+                <>
+                  <span className="text-white/40">&lt;!-- Your embed code appears here --&gt;</span>
+                  <br />
+                  <span className="text-white/55">&lt;a href=&quot;…&quot;&gt;Find us on Spreadbliss&lt;/a&gt;</span>
+                </>
+              )}
             </div>
             <div className="mt-5">
               <DisabledButton>
@@ -246,35 +303,109 @@ export default function Home() {
         >
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-center">
             <div className="mx-auto w-full max-w-[360px]">
-              <div className="relative grid aspect-square place-items-center overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-brand-soft/70 to-gold-soft/60">
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-40"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at center, rgba(37,99,235,0.22) 1px, transparent 1.4px)",
-                    backgroundSize: "20px 20px",
-                  }}
-                />
-                <div className="relative flex flex-col items-center gap-3 px-8 text-center">
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 text-brand">
-                    <Icon.Sparkle className="h-6 w-6" />
-                  </span>
-                  <p className="max-w-[220px] text-[14px] font-semibold leading-relaxed text-brand-strong">
-                    Add your organization information to create a shareable Impact Card.
-                  </p>
+              {ready ? (
+                <div className="relative flex aspect-square flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand-strong text-white shadow-[0_24px_60px_-30px_rgba(37,99,235,0.7)]">
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-25"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at center, rgba(255,255,255,0.5) 1px, transparent 1.4px)",
+                      backgroundSize: "22px 22px",
+                    }}
+                  />
+                  <div className="relative flex flex-1 flex-col p-7">
+                    <div className="flex items-center gap-3">
+                      {org.logoDataUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={org.logoDataUrl}
+                          alt={`${trimmedName} logo`}
+                          className="h-11 w-11 shrink-0 rounded-xl bg-white/90 object-contain"
+                        />
+                      ) : (
+                        <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/15 backdrop-blur">
+                          <Icon.Sparkle className="h-6 w-6 text-white" />
+                        </span>
+                      )}
+                      <span className="break-words font-display text-[17px] font-bold leading-tight">
+                        {trimmedName}
+                      </span>
+                    </div>
+
+                    <div className="mt-auto">
+                      {trimmedImpact ? (
+                        <p className="break-words font-display text-[28px] font-bold leading-tight tracking-tight">
+                          {trimmedImpact}
+                        </p>
+                      ) : null}
+                      {trimmedMessage ? (
+                        <p className="mt-3 max-w-[16rem] break-words text-[15px] leading-snug text-white/85">
+                          {trimmedMessage}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-6 flex items-end justify-between gap-3 border-t border-white/15 pt-4">
+                      <div>
+                        <p className="text-[12px] font-semibold text-white/70">Discover our work on</p>
+                        <p className="font-display text-[16px] font-bold">Spreadbliss</p>
+                      </div>
+                      <div className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-lg bg-white p-1.5 shadow-sm">
+                        <div
+                          className="h-full w-full rounded-sm opacity-30"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(#111111 25%, transparent 25%), linear-gradient(90deg, #111111 25%, transparent 25%)",
+                            backgroundSize: "8px 8px",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative grid aspect-square place-items-center overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-brand-soft/70 to-gold-soft/60">
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-40"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at center, rgba(37,99,235,0.22) 1px, transparent 1.4px)",
+                      backgroundSize: "20px 20px",
+                    }}
+                  />
+                  <div className="relative flex flex-col items-center gap-3 px-8 text-center">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 text-brand">
+                      <Icon.Sparkle className="h-6 w-6" />
+                    </span>
+                    <p className="max-w-[220px] text-[14px] font-semibold leading-relaxed text-brand-strong">
+                      Add your organization information to create a shareable Impact Card.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {ready ? (
+                <p className="mt-3 text-center text-[12px] text-muted">Exports as 1080 × 1080 PNG</p>
+              ) : null}
             </div>
 
             <div>
-              <h3 className="font-display text-[16px] font-bold text-ink">Your Impact Card will include</h3>
+              <h3 className="font-display text-[16px] font-bold text-ink">
+                {ready ? "This Impact Card includes" : "Your Impact Card will include"}
+              </h3>
               <ul className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {impactCardItems.map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-[13.5px] text-ink">
-                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-strong">
+                {impactCardItems.map(({ label, value, present }) => (
+                  <li key={label} className="flex items-start gap-2.5 text-[13.5px] text-ink">
+                    <span
+                      className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${
+                        present ? "bg-brand-soft text-brand-strong" : "bg-canvas text-muted"
+                      }`}
+                    >
                       <Icon.Check className="h-3 w-3" />
                     </span>
-                    {item}
+                    <span className="min-w-0">
+                      <span className="font-semibold">{label}</span>
+                      <span className="block break-words text-[12.5px] text-muted">{value}</span>
+                    </span>
                   </li>
                 ))}
               </ul>
