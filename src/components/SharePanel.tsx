@@ -42,8 +42,14 @@ async function copyToClipboard(text: string): Promise<void> {
 }
 
 function openInNewTab(url: string): boolean {
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  return opened !== null;
+  // Passing a "noopener" feature string makes window.open return null even on
+  // success, so open first and sever the opener reference afterwards.
+  const opened = window.open(url, "_blank");
+  if (!opened) {
+    return false;
+  }
+  opened.opener = null;
+  return true;
 }
 
 type SharePanelProps = {
