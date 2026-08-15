@@ -16,6 +16,9 @@ type ActionButtonProps = {
   variant?: "solid" | "outline";
   successLabel?: string;
   disabled?: boolean;
+  /** Shows an in-progress state and blocks re-entry while the action runs. */
+  busy?: boolean;
+  busyLabel?: string;
   className?: string;
   /** Return true to flash the transient success state on the button. */
   onAction: () => Promise<boolean> | boolean;
@@ -28,6 +31,8 @@ export function ActionButton({
   variant = "solid",
   successLabel = "Copied",
   disabled = false,
+  busy = false,
+  busyLabel,
   className = "",
   onAction,
 }: ActionButtonProps) {
@@ -51,6 +56,9 @@ export function ActionButton({
   }
 
   async function handleClick() {
+    if (busy) {
+      return;
+    }
     const succeeded = await onAction();
     if (!succeeded) {
       return;
@@ -68,6 +76,20 @@ export function ActionButton({
     variant === "solid"
       ? "bg-brand text-white shadow-sm hover:bg-brand-strong"
       : "border border-line bg-white text-ink hover:border-brand/50 hover:bg-brand-soft/40";
+
+  if (busy) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-busy="true"
+        className={`${base} cursor-wait ${variant === "solid" ? "bg-brand/70 text-white shadow-sm" : "border border-line bg-canvas/60 text-muted"} ${className}`}
+      >
+        <Icon.Spinner className="h-4 w-4 animate-spin" />
+        {busyLabel ?? children}
+      </button>
+    );
+  }
 
   return (
     <button

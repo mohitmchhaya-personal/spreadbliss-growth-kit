@@ -1,27 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
+import { useState } from "react";
 import { ActionButton } from "@/components/ActionButton";
 import { FeedbackBanner, type Feedback } from "@/components/FeedbackBanner";
 import { Icon } from "@/components/icons";
 import { copyToClipboard } from "@/lib/clipboard";
 import { downloadDataUrl } from "@/lib/download";
 import { slugify } from "@/lib/slug";
-
-type QrState =
-  | { status: "idle" }
-  | { status: "ready"; url: string; dataUrl: string }
-  | { status: "error"; url: string };
+import type { QrCodeState } from "@/hooks/useQrCode";
 
 type QrCodeSectionProps = {
   organizationName: string;
   profileUrl: string | null;
+  qr: QrCodeState;
 };
 
-export function QrCodeSection({ organizationName, profileUrl }: QrCodeSectionProps) {
-  const [qr, setQr] = useState<QrState>({ status: "idle" });
-  const [attempt, setAttempt] = useState(0);
+export function QrCodeSection({ organizationName, profileUrl, qr }: QrCodeSectionProps) {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const [prevUrl, setPrevUrl] = useState(profileUrl);
@@ -30,30 +24,8 @@ export function QrCodeSection({ organizationName, profileUrl }: QrCodeSectionPro
     setFeedback(null);
   }
 
-  useEffect(() => {
-    if (!profileUrl) {
-      return;
-    }
-    let cancelled = false;
-    QRCode.toDataURL(profileUrl, { width: 480, margin: 2, errorCorrectionLevel: "M" })
-      .then((dataUrl) => {
-        if (!cancelled) {
-          setQr({ status: "ready", url: profileUrl, dataUrl });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setQr({ status: "error", url: profileUrl });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [profileUrl, attempt]);
-
-  const currentQr =
-    profileUrl !== null && qr.status === "ready" && qr.url === profileUrl ? qr : null;
-  const qrFailed = profileUrl !== null && qr.status === "error" && qr.url === profileUrl;
+  const currentQr = qr.current;
+  const qrFailed = qr.failed;
 
   function handleDownload(): boolean {
     if (!currentQr) {
@@ -117,7 +89,7 @@ export function QrCodeSection({ organizationName, profileUrl }: QrCodeSectionPro
             </p>
             <button
               type="button"
-              onClick={() => setAttempt((n) => n + 1)}
+              onClick={qr.retry}
               className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3.5 py-2 text-[13px] font-semibold text-brand-strong transition hover:border-brand/40"
             >
               Try again
