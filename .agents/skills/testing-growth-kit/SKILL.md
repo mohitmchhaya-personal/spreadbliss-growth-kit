@@ -42,6 +42,15 @@ Caveat: when driving Chrome through the browser automation tool, the viewport ma
 ## Browser typing gotcha
 The automation `type` action appends to existing input. To replace a field's value: click the field, press `Control+A`, press `Delete`, then type. Multi-key strings like "BackSpace BackSpace" don't work — send individual key presses.
 
+## Clipboard, downloads and QR verification
+- Read the real clipboard from the shell: `sudo apt-get install -y xclip` (once), then `DISPLAY=:0 xclip -selection clipboard -o`. This verifies exact multi-line contents (badge HTML) better than console tricks; top-level `await` is NOT allowed in the browser console tool — use `.then()` or xclip.
+- Downloads land in `/tmp/chisel_browser_downloads/`. `file` may be missing; verify PNG signature/dimensions with a short Python snippet instead.
+- Decode QR PNGs with `zbarimg <file>` (package `zbar-tools`) and compare against the exact URL including query + fragment.
+- Clipboard-failure path: in the console run `navigator.clipboard.writeText = () => Promise.reject(new Error('denied'))`, click the copy button, expect error banner + readonly fallback textarea; reload to restore.
+
+## Harness artifact: target="_blank" is stripped from the DOM
+The browser automation instrumentation removes the `target` attribute from anchors (to keep navigation in-tab). `a.getAttribute('target')` returns `null` even for a plain static HTML control page containing `target="_blank"`. Do NOT report this as an app bug — verify `target="_blank"` via the source/React props or a control page instead.
+
 ## Expectations for the shell phase
 - Exactly five numbered sections: Organization Information, Share Your Profile, QR Code, Website Badge, Impact Card.
 - All 16 actions (12 share targets + Download QR Code, Copy Profile Link, Copy Website Code, Download Impact Card) are intentionally `disabled` — "does nothing" is correct; failing behavior would be a throw, a fake success toast, or a focusable disabled button.
