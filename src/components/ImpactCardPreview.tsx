@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- self-contained export node: data URLs + local asset */
+import type React from "react";
 import type { Ref } from "react";
 
 /** CSS pixel size of the export node; captured at pixelRatio 2 for a 1080 × 1080 PNG. */
@@ -31,6 +32,29 @@ function fitFontSize(text: string, base: number, steps: [number, number][]): num
   return base;
 }
 
+/**
+ * Truncate to a character budget with an explicit ellipsis. The DOM-to-image
+ * export does not reproduce CSS line-clamp ellipses, so overflowing text is
+ * shortened before render; the CSS clamp below stays as a layout backstop.
+ */
+function truncateText(text: string, maxChars: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, maxChars - 1).trimEnd()}\u2026`;
+}
+
+/** Clamp a text block to a fixed number of lines, ellipsizing the overflow. */
+function clampLines(lines: number): React.CSSProperties {
+  return {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical",
+    WebkitLineClamp: lines,
+    overflow: "hidden",
+  };
+}
+
 export type ImpactCardPreviewProps = {
   organizationName: string;
   profileUrl: string;
@@ -57,11 +81,15 @@ export function ImpactCardPreview({
   ref,
 }: ImpactCardPreviewProps) {
   const host = profileUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const displayName = truncateText(organizationName, 160);
   const stat = impact ? parseImpact(impact) : null;
+  const statLabel = stat ? truncateText(stat.label, stat.value ? 180 : 260) : "";
+  const displayMessage = message ? truncateText(message, 240) : "";
 
-  const nameSize = fitFontSize(organizationName, 15, [
+  const nameSize = fitFontSize(displayName, 13, [
     [28, 23],
     [56, 19],
+    [120, 15],
   ]);
   const statValueSize = stat?.value
     ? fitFontSize(stat.value, 40, [
@@ -69,8 +97,18 @@ export function ImpactCardPreview({
         [14, 68],
       ])
     : 0;
-  const statLabelSize = stat ? fitFontSize(stat.label, 14, [[36, stat.value ? 23 : 42]]) : 0;
-  const messageSize = message ? fitFontSize(message, 14, [[90, 22]]) : 0;
+  const statLabelSize = stat
+    ? fitFontSize(statLabel, 12, [
+        [36, stat.value ? 23 : 42],
+        [160, 14],
+      ])
+    : 0;
+  const messageSize = displayMessage
+    ? fitFontSize(displayMessage, 12, [
+        [90, 22],
+        [220, 14],
+      ])
+    : 0;
 
   return (
     <div
@@ -117,9 +155,10 @@ export function ImpactCardPreview({
               lineHeight: 1.05,
               letterSpacing: "-0.02em",
               overflowWrap: "anywhere",
+              ...clampLines(4),
             }}
           >
-            {organizationName}
+            {displayName}
           </div>
           <div
             style={{
@@ -141,9 +180,10 @@ export function ImpactCardPreview({
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: "safe center",
           gap: 14,
           minHeight: 0,
+          overflow: "hidden",
         }}
       >
         {stat ? (
@@ -158,6 +198,7 @@ export function ImpactCardPreview({
                     lineHeight: 0.9,
                     letterSpacing: "-0.04em",
                     overflowWrap: "anywhere",
+                    ...clampLines(2),
                   }}
                 >
                   {stat.value}
@@ -173,9 +214,10 @@ export function ImpactCardPreview({
                     textTransform: "uppercase",
                     color: GOLD,
                     overflowWrap: "anywhere",
+                    ...clampLines(5),
                   }}
                 >
-                  {stat.label}
+                  {statLabel}
                 </div>
               </>
             ) : (
@@ -188,14 +230,15 @@ export function ImpactCardPreview({
                   letterSpacing: "-0.03em",
                   textTransform: "uppercase",
                   overflowWrap: "anywhere",
+                  ...clampLines(7),
                 }}
               >
-                {stat.label}
+                {statLabel}
               </div>
             )}
           </div>
         ) : null}
-        {message ? (
+        {displayMessage ? (
           <div
             style={{
               fontFamily: displayFont,
@@ -206,9 +249,10 @@ export function ImpactCardPreview({
               maxWidth: 360,
               color: "#1f2937",
               overflowWrap: "anywhere",
+              ...clampLines(6),
             }}
           >
-            {message}
+            {displayMessage}
           </div>
         ) : null}
       </div>
